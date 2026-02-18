@@ -29,7 +29,8 @@ public_users.get("/", async (req, res) => {
 public_users.get("/isbn/:isbn", async (req, res) => {
     try {
         const isbn = req.params.isbn;
-        const book = await Promise.resolve(books[isbn]); // Simulate async fetch
+        const book = await Promise.resolve(books[isbn]); // Simulate async fetch with Promise
+
         if (book) {
             res.status(200).json(book);
         } else {
@@ -48,10 +49,9 @@ public_users.get("/isbn/:isbn", async (req, res) => {
  */
 public_users.get("/author/:author", async (req, res) => {
     try {
-        const author = req.params.author.toLowerCase(); // Normalize input
-        const allBooks = await Promise.resolve(Object.values(books)); // Get array of all books
+        const author = req.params.author.toLowerCase();
+        const allBooks = await Promise.resolve(Object.values(books));
 
-        // Filter books by author
         const filteredBooks = allBooks.filter(
             (book) => book.author.toLowerCase() === author
         );
@@ -74,10 +74,9 @@ public_users.get("/author/:author", async (req, res) => {
  */
 public_users.get("/title/:title", async (req, res) => {
     try {
-        const title = req.params.title.toLowerCase(); // Normalize input
-        const allBooks = await Promise.resolve(Object.values(books)); // Get array of all books
+        const title = req.params.title.toLowerCase();
+        const allBooks = await Promise.resolve(Object.values(books));
 
-        // Filter books by title
         const filteredBooks = allBooks.filter(
             (book) => book.title.toLowerCase() === title
         );
@@ -100,7 +99,7 @@ public_users.get("/title/:title", async (req, res) => {
 public_users.get("/review/:isbn", async (req, res) => {
     try {
         const isbn = req.params.isbn;
-        const book = await Promise.resolve(books[isbn]); // Simulate async fetch
+        const book = await Promise.resolve(books[isbn]);
 
         if (book) {
             res.status(200).json(book.reviews);
