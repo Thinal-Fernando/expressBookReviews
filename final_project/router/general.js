@@ -1,114 +1,89 @@
-// general.js
-console.log("GENERAL.JS LOADED FROM:", __filename);
-
 const express = require("express");
-const axios = require("axios"); // Ready for real API calls if needed
-const books = require("./booksdb.js"); // Local book database
-const { users, isValid } = require("./auth_users.js"); // User utilities
+const axios = require("axios");
+let books = require("./booksdb.js");
+let isValid = require("./auth_users.js").isValid;
+let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
-/**
- * ✅ Task 1 – Get all books
- * Returns all books in the database.
- * Wrapped in a Promise to simulate async operations (like fetching from an API).
- */
+const doesExist = (username) => {
+  return users.some((user) => user.username === username);
+};
+
+const getAllBooks = () => {
+  return books;
+};
+
+public_users.post("/register", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  if (!username || !password) {
+    return res.status(404).json({ message: "Missing username or password" });
+  } else if (doesExist(username)) {
+    return res.status(404).json({ message: "user already exists." });
+  } else {
+    users.push({ username: username, password: password });
+    return res
+      .status(200)
+      .json({ message: "User successfully registered.  Please login." });
+  }
+});
+
+// Get the book list available in the shop
 public_users.get("/", async (req, res) => {
-    try {
-        const allBooks = await Promise.resolve(books);
-        res.status(200).json(allBooks);
-    } catch (err) {
-        res.status(500).json({ message: "Error retrieving books", error: err });
-    }
+  try {
+    const allBooks = await getAllBooks();
+    return res.status(200).send(JSON.stringify(allBooks, null, 4));
+  } catch (e) {
+    res.status(500).send(e);
+  }
 });
 
-/**
- * ✅ Task 2 – Get book details based on ISBN
- * Route: /isbn/:isbn
- * Retrieves a single book object by ISBN.
- */
+// Get book details based on ISBN
 public_users.get("/isbn/:isbn", async (req, res) => {
-    try {
-        const isbn = req.params.isbn;
-        const book = await Promise.resolve(books[isbn]); // Simulate async fetch with Promise
-
-        if (book) {
-            res.status(200).json(book);
-        } else {
-            res.status(404).json({ message: "Book not found" });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error retrieving book", error: err });
-    }
+  const targetISBN = parseInt(req.params.isbn);
+  const targetBook = await books[targetISBN];
+  if (!targetBook) {
+    return res.status(404).json({ message: "ISBN not found." });
+  } else {
+    return res.status(200).json(targetBook);
+  }
 });
 
-/**
- * ✅ Task 3 – Get books based on author
- * Route: /author/:author
- * Filters all books to return only those by the specified author.
- * Case-insensitive matching.
- */
+// Get book details based on author
 public_users.get("/author/:author", async (req, res) => {
-    try {
-        const author = req.params.author.toLowerCase();
-        const allBooks = await Promise.resolve(Object.values(books));
-
-        const filteredBooks = allBooks.filter(
-            (book) => book.author.toLowerCase() === author
-        );
-
-        if (filteredBooks.length > 0) {
-            res.status(200).json(filteredBooks);
-        } else {
-            res.status(404).json({ message: "No books found for this author" });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error retrieving books", error: err });
-    }
+  // get array of matching book objects
+  const matchingBooks = Object.values(await books).filter(
+    (book) => book.author.toLowerCase() === req.params.author.toLowerCase(),
+  );
+  if (matchingBooks.length > 0) {
+    return res.status(200).send(JSON.stringify(matchingBooks, null, 4));
+  } else {
+    return res.status(404).json({ message: "No books by that author." });
+  }
 });
 
-/**
- * ✅ Task 4 – Get books based on title
- * Route: /title/:title
- * Filters all books to return only those with the specified title.
- * Case-insensitive matching.
- */
+// Get all books based on title
 public_users.get("/title/:title", async (req, res) => {
-    try {
-        const title = req.params.title.toLowerCase();
-        const allBooks = await Promise.resolve(Object.values(books));
-
-        const filteredBooks = allBooks.filter(
-            (book) => book.title.toLowerCase() === title
-        );
-
-        if (filteredBooks.length > 0) {
-            res.status(200).json(filteredBooks);
-        } else {
-            res.status(404).json({ message: "No books found with this title" });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error retrieving books", error: err });
-    }
+  const matchingTitle = Object.values(await books).filter(
+    (book) => book.title.toLowerCase() === req.params.title.toLowerCase(),
+  )[0];
+  if (matchingTitle) {
+    return res.status(200).json(matchingTitle);
+  } else {
+    return res.status(404).json({ message: "Title not found." });
+  }
 });
 
-/**
- * ✅ Task 5 – Get book reviews by ISBN
- * Route: /review/:isbn
- * Returns only the reviews object for a given book.
- */
-public_users.get("/review/:isbn", async (req, res) => {
-    try {
-        const isbn = req.params.isbn;
-        const book = await Promise.resolve(books[isbn]);
-
-        if (book) {
-            res.status(200).json(book.reviews);
-        } else {
-            res.status(404).json({ message: "Book not found" });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error retrieving reviews", error: err });
-    }
+//  Get book review
+public_users.get("/review/:isbn", function (req, res) {
+  const targetISBN = req.params.isbn;
+  const targetBook = books[targetISBN];
+  if (targetBook) {
+    return res.status(200).send(JSON.stringify(targetBook.reviews, null, 4));
+  } else {
+    return res.status(404).json({ message: "ISBN not found." });
+  }
 });
 
 module.exports.general = public_users;

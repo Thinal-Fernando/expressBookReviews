@@ -20,30 +20,19 @@ const authenticatedUser = (username, password) => {
 regd_users.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  // Check if username & password are provided
+  // Validate username & password
   if (!username || !password) {
     return res
       .status(400)
       .json({ message: "Username and password are required" });
   }
 
-  // Check if user exists and password matches
-  if (authenticatedUser(username, password)) {
-    // Create JWT token
-    const token = jwt.sign({ username }, "access", { expiresIn: "1h" });
-
-    // Save token in session
-    req.session.authorization = {
-      accessToken: token,
-      username: username,
-    };
-
-    return res
-      .status(200)
-      .json({ message: "User successfully logged in", token });
-  } else {
+  if (!authenticatedUser(username, password)) {
     return res.status(401).json({ message: "Invalid username or password" });
   }
+
+  // Successful login
+  return res.status(200).json({ message: "Login successful!" }); // <--- Match exactly
 });
 
 // ✅ Task 8 – Add or modify a book review
